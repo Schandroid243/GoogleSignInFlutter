@@ -57,7 +57,7 @@ class _MyHomePageState extends State<MyHomePage> {
     var response = await http.post(
       Uri.parse('http://192.168.18.13:3000/api/google-auth'),
       headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json', 
         }, // Replace with your backend endpoint URL
       body: msg,
     );
