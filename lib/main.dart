@@ -12,7 +12,8 @@ void main() {
 const GOOGLE_CLIENT_DEV_KEY = '908020662248-4avibqhg0tk2eledufh7jokj8thhtjgn.apps.googleusercontent.com';
 final GoogleSignIn _googleSignIn = GoogleSignIn(
   clientId: GOOGLE_CLIENT_DEV_KEY,
-  serverClientId: GOOGLE_CLIENT_DEV_KEY
+  serverClientId: GOOGLE_CLIENT_DEV_KEY,
+  scopes: ['email']
 );
 
 class MyApp extends StatelessWidget {
@@ -39,7 +40,63 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   bool _isSignedIn = false;
+  TextEditingController emailController = TextEditingController(); 
+  TextEditingController passwordController = TextEditingController(); 
 
+  void _sendRequest() async {
+    try{
+      if(passwordController.text == "") {
+          
+        } else {
+          final msg = jsonEncode(
+          {
+            'email': emailController.text,
+            'password': passwordController.text,
+          }
+          );
+          print('The body is: $msg');
+          var response = await http.post(
+            Uri.parse('http://192.168.18.23:3000/api/addUser'),
+            headers: {
+                'Content-Type': 'application/json',
+              }, // Replace with your backend endpoint URL
+            body: msg,
+          );
+
+          if (response.statusCode == 201) {
+            // Authentication successful
+            print('Successfully authenticated response: ${response.body}');
+            setState(() {
+              _isSignedIn = true;
+              emailController.text = '';
+              passwordController.text = '';
+            });
+          } else {
+            // Authentication failed
+            print('Authentication failed. Server response: ${response.body}');
+          }
+        }
+    } catch (error) {
+      print('Error signing up: $error');
+    }
+  }
+
+  void _signUp() async {
+    try{
+      setState(() {
+          _isSignedIn = false;
+        });
+      GoogleSignInAccount? account = await _googleSignIn.signIn();
+      if (account!= null) {
+        setState(() {
+          _isSignedIn = false;
+        });
+        emailController.text = account.email;
+      }
+    } catch (error) {
+      print('Error: $error');
+    }
+  }
   
 
   void _signIn() async {
@@ -55,7 +112,7 @@ class _MyHomePageState extends State<MyHomePage> {
     final msg = jsonEncode({'token': idToken});
     print('The body is: $msg');
     var response = await http.post(
-      Uri.parse('http://192.168.18.13:3000/api/google-auth'),
+      Uri.parse('http://192.168.18.23:3000/api/google-auth'),
       headers: {
           'Content-Type': 'application/json',
         }, // Replace with your backend endpoint URL
@@ -117,10 +174,38 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                 ],
               )
-            : ElevatedButton(
-                onPressed: _signIn,
-                child: const Text('Sign In with Google'),
-              ),
+            : Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: TextField(  
+                  controller: emailController,  
+                )),
+                const SizedBox(height: 5),
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: TextField(  
+                  controller: passwordController,  
+                ), 
+                ),
+                const SizedBox(height: 3),
+                ElevatedButton(
+                  onPressed: _signIn,
+                  child: const Text('Sign In with Google'), //_sendRequest
+                ),
+                const SizedBox(height: 5),
+                ElevatedButton(
+                  onPressed: _signUp,
+                  child: const Text('Get email'),
+                ),
+                const SizedBox(height: 5),
+                ElevatedButton(
+                  onPressed: _sendRequest,
+                  child: const Text('Sign Up with Google'),
+                ),
+              ]
+            )
       ),
     );
   }
